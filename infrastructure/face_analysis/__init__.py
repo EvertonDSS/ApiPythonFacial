@@ -1,1 +1,0 @@
-"""Provedores de análise facial."""

@@ -1,1 +1,0 @@
-"""Interfaces (contratos) do domínio."""

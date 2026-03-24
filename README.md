@@ -63,16 +63,14 @@ Ou:
 python main.py
 ```
 
-## Estrutura do Projeto (Clean Architecture)
+## Estrutura do Projeto
 
 ```
 facial2/
-├── domain/           # Regras de negócio, interfaces, validações
-├── infrastructure/   # InsightFace, implementações externas
-├── api/              # Controllers, schemas (DTOs), options
-│   └── v1/           # API versionada
-├── config/           # Configurações (appsettings)
-└── main.py           # Entry point
+├── main.py           # App FastAPI + rotas
+├── face_service.py   # InsightFace (detecção, embeddings, similaridade)
+├── schemas.py        # DTOs (Pydantic)
+└── requirements.txt
 ```
 
 ## Uso

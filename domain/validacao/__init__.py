@@ -1,1 +1,0 @@
-"""Validações do domínio."""
