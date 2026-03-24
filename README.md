@@ -63,6 +63,99 @@ Ou:
 python main.py
 ```
 
+## Instalação em servidor Windows com IIS
+
+Para publicar a API em um servidor Windows que já possui IIS:
+
+### 1. Pré-requisitos
+
+- **Windows Server 2016+** ou **Windows 10+** com IIS 10
+- **Python** instalado (ex: 3.11)
+- **HttpPlatformHandler v1.2** – a Microsoft não recomenda mais WFastCGI
+
+### 2. Instalar HttpPlatformHandler
+
+Baixe e instale em:  
+https://www.iis.net/downloads/microsoft/httpplatformhandler
+
+### 3. Instalar a aplicação
+
+```powershell
+# Exemplo: diretório da aplicação
+cd C:\inetpub\wwwroot\ApiPythonFacial
+
+# Criar ambiente virtual
+python -m venv venv
+venv\Scripts\activate
+
+# Instalar dependências
+pip install -r requirements.txt
+```
+
+### 4. Criar web.config
+
+Crie o arquivo `web.config` na pasta raiz da aplicação:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <handlers>
+      <add name="httpPlatformHandler" path="*" verb="*"
+           modules="httpPlatformHandler" resourceType="Unspecified"
+           requireAccess="Script" />
+    </handlers>
+    <httpPlatform
+      stdoutLogEnabled="true"
+      stdoutLogFile=".\logs\python.log"
+      startupTimeLimit="120"
+      processPath="C:\inetpub\wwwroot\ApiPythonFacial\venv\Scripts\python.exe"
+      arguments="-m uvicorn main:app --host 127.0.0.1 --port %HTTP_PLATFORM_PORT%">
+      <environmentVariables>
+        <environmentVariable name="PYTHONPATH" value="C:\inetpub\wwwroot\ApiPythonFacial" />
+      </environmentVariables>
+    </httpPlatform>
+  </system.webServer>
+</configuration>
+```
+
+**Ajuste** `processPath` e `PYTHONPATH` para o caminho real da sua aplicação.
+
+> **Importante:** O `startupTimeLimit` está em **120 segundos** porque o InsightFace baixa o modelo `buffalo_l` (~326MB) na primeira execução. Se for insuficiente, aumente.
+
+### 5. Configurar o site no IIS
+
+1. Abra o **IIS Manager** (inetmgr)
+2. Crie um novo **Application Pool**:
+   - .NET CLR Version: **No Managed Code**
+   - Identity: **ApplicationPoolIdentity** (ou conta com permissões adequadas)
+3. Crie um novo **Site** ou **Application** apontando para a pasta da API
+4. Associe o Application Pool criado
+5. Configure o binding (ex: porta 80/443, hostname)
+
+### 6. Pastas e permissões
+
+Crie a pasta `logs` para os logs do HttpPlatformHandler:
+
+```powershell
+mkdir C:\inetpub\wwwroot\ApiPythonFacial\logs
+```
+
+Garanta que a identidade do Application Pool (ex: `IIS AppPool\NomeDoPool`) tenha:
+
+- **Leitura** na pasta da aplicação
+- **Leitura/gravação** na pasta `logs`
+- **Leitura** na pasta do modelo InsightFace (gerada em `~/.insightface` na primeira execução)
+
+### 7. Testar
+
+Após reiniciar o site, acesse:
+
+- `http://seu-servidor/docs` – Swagger UI  
+- `http://seu-servidor/api/v1/health` – Health check  
+
+Em caso de erro, verifique os logs em `.\logs\python.log`.
+
 ## Estrutura do Projeto
 
 ```
