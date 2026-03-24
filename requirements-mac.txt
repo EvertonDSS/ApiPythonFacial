@@ -1,0 +1,13 @@
+# Requisitos para macOS com Apple Silicon (M1/M2/M3/M4)
+# Use: pip install -r requirements-mac.txt
+#
+# onnxruntime-silicon usa CoreML e é mais rápido que onnxruntime no Mac.
+# Os demais pacotes são iguais ao requirements.txt.
+
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+insightface==0.7.3
+onnxruntime-silicon>=1.16.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
