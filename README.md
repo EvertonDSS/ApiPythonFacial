@@ -69,8 +69,14 @@ Para publicar a API em um servidor Windows que já possui IIS:
 
 ### 1. Pré-requisitos
 
-- **Windows Server 2016+** ou **Windows 10+** com IIS 10
-- **Python** instalado (ex: 3.11)
+- **Windows Server 2016+** ou **Windows 10+** com IIS 10 ✅ já instalado
+- **Python 3.14.3** – https://www.python.org/downloads/release/python-3143/
+  - Durante a instalação, marque **"Add Python to PATH"** e **"Install for all users"**
+  - Caminho padrão: `C:\Python314\`
+- **Visual C++ Build Tools** – necessário para compilar dependências nativas
+  - https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  - Na instalação, selecione **"Desenvolvimento para desktop com C++"**
+- **Git** *(opcional, para clonar o repositório)* – https://git-scm.com/download/win
 - **HttpPlatformHandler v1.2** – a Microsoft não recomenda mais WFastCGI
 
 ### 2. Instalar HttpPlatformHandler
@@ -164,27 +170,41 @@ Para rodar a API como **serviço do Windows** (inicia com o sistema, sem necessi
 
 Usa a API padrão do Windows para serviços. Apenas Python e a biblioteca `pywin32`.
 
-1. Instale as dependências incluindo pywin32:
+#### Pré-requisito importante
+
+O serviço Windows é executado pelo Python do sistema, **não** pelo ambiente virtual. Por isso, o `pywin32` deve estar instalado **no Python do sistema** (não apenas no `.venv`).
+
+Abra o **PowerShell como Administrador** e execute:
+
+```powershell
+# Instalar pywin32 no Python do sistema
+C:\Python314\python.exe -m pip install pywin32 --target C:\Python314\Lib\site-packages --upgrade
+
+# Localizar o script de pós-instalação
+Get-ChildItem -Recurse -Filter "pywin32_postinstall.py" C:\Python314\Lib\site-packages\
+
+# Rodar o pós-instalação com o caminho retornado acima (geralmente este caminho)
+C:\Python314\python.exe "C:\Python314\Lib\site-packages\bin\pywin32_postinstall.py" -install
+```
+
+#### Instalando o serviço
+
+1. Instale as dependências do projeto no `.venv`:
 
 ```powershell
 pip install -r requirements-windows.txt
 ```
 
-2. Abra o **PowerShell ou Prompt de Comando como Administrador** na pasta da aplicação
-3. Instale o serviço:
+2. Abra o **PowerShell como Administrador** na pasta da aplicação
+
+3. Instale e inicie o serviço:
 
 ```powershell
 python service_windows.py install
-```
-
-4. Inicie o serviço:
-
-```powershell
 python service_windows.py start
-# ou: net start ApiPythonFacial
 ```
 
-5. Configure para iniciar automaticamente (opcional): abra `services.msc`, localize **API de Verificação Facial**, propriedades → Tipo de inicialização: **Automático**
+4. Configure para iniciar automaticamente (opcional): abra `services.msc`, localize **API de Verificação Facial**, propriedades → Tipo de inicialização: **Automático**
 
 **Comandos:**
 | Comando | Descrição |
@@ -194,6 +214,8 @@ python service_windows.py start
 | `python service_windows.py stop` | Parar |
 | `python service_windows.py remove` | Desinstalar |
 | `python service_windows.py debug` | Rodar em console (para diagnóstico) |
+
+> **Dica:** Em caso de falha ao iniciar, rode `python service_windows.py debug` para ver o erro diretamente no terminal antes de tentar como serviço.
 
 **Porta:** por padrão usa a 8000. Para alterar, defina a variável de ambiente `PORT` antes de instalar ou use `set PORT=9000` no ambiente do serviço.
 

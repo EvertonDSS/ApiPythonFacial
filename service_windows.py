@@ -1,27 +1,19 @@
-"""
-Serviço Windows nativo para a API de Verificação Facial.
-Usa pywin32 (win32serviceutil) - sem programas externos.
-
-Uso (como Administrador):
-    python service_windows.py install   - instalar
-    python service_windows.py start     - iniciar
-    python service_windows.py stop      - parar
-    python service_windows.py remove    - desinstalar
-    python service_windows.py debug     - rodar em modo debug (console)
-"""
-
 import os
 import sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VENV_PATH = os.path.join(BASE_DIR, '.venv')
+sys.path.insert(0, os.path.join(VENV_PATH, 'Lib', 'site-packages'))
+
 import subprocess
 import win32event
 import win32service
 import win32serviceutil
 import servicemanager
 
-
-# Diretório da aplicação (onde está main.py)
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
+APP_DIR = BASE_DIR
 PORT = int(os.environ.get("PORT", "8000"))
+PYTHON_EXE = os.path.join(VENV_PATH, 'Scripts', 'python.exe')
 
 
 class ApiPythonFacialService(win32serviceutil.ServiceFramework):
@@ -41,6 +33,7 @@ class ApiPythonFacialService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
             servicemanager.PYS_SERVICE_STARTED,
@@ -49,9 +42,8 @@ class ApiPythonFacialService(win32serviceutil.ServiceFramework):
         self.main()
 
     def main(self):
-        python_exe = sys.executable
         cmd = [
-            python_exe, "-m", "uvicorn",
+            PYTHON_EXE, "-m", "uvicorn",
             "main:app",
             "--host", "0.0.0.0",
             "--port", str(PORT),
@@ -65,7 +57,6 @@ class ApiPythonFacialService(win32serviceutil.ServiceFramework):
             stderr=subprocess.PIPE,
         )
 
-        # Aguarda sinal de parada ou fim do processo
         win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
 
         if self.process and self.process.poll() is None:
