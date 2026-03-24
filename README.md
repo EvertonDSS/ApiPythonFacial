@@ -156,14 +156,98 @@ Após reiniciar o site, acesse:
 
 Em caso de erro, verifique os logs em `.\logs\python.log`.
 
+## Instalação como Serviço do Windows
+
+Para rodar a API como **serviço do Windows** (inicia com o sistema, sem necessidade de usuário logado):
+
+### Opção 1: Serviço nativo (pywin32 – sem programas externos)
+
+Usa a API padrão do Windows para serviços. Apenas Python e a biblioteca `pywin32`.
+
+1. Instale as dependências incluindo pywin32:
+
+```powershell
+pip install -r requirements-windows.txt
+```
+
+2. Abra o **PowerShell ou Prompt de Comando como Administrador** na pasta da aplicação
+3. Instale o serviço:
+
+```powershell
+python service_windows.py install
+```
+
+4. Inicie o serviço:
+
+```powershell
+python service_windows.py start
+# ou: net start ApiPythonFacial
+```
+
+5. Configure para iniciar automaticamente (opcional): abra `services.msc`, localize **API de Verificação Facial**, propriedades → Tipo de inicialização: **Automático**
+
+**Comandos:**
+| Comando | Descrição |
+|---------|-----------|
+| `python service_windows.py install` | Instalar o serviço |
+| `python service_windows.py start` | Iniciar |
+| `python service_windows.py stop` | Parar |
+| `python service_windows.py remove` | Desinstalar |
+| `python service_windows.py debug` | Rodar em console (para diagnóstico) |
+
+**Porta:** por padrão usa a 8000. Para alterar, defina a variável de ambiente `PORT` antes de instalar ou use `set PORT=9000` no ambiente do serviço.
+
+### Opção 2: NSSM (Non-Sucking Service Manager)
+
+Alternativa sem instalar pywin32:
+
+1. Baixe o NSSM: https://nssm.cc/download  
+2. Extraia e abra o **prompt como Administrador** na pasta `nssm-2.24\win64`
+3. Instale o serviço:
+
+```powershell
+nssm install ApiPythonFacial "C:\caminho\ApiPythonFacial\venv\Scripts\python.exe" "-m uvicorn main:app --host 0.0.0.0 --port 8000"
+```
+
+4. Em **Application** → **Startup directory**: `C:\caminho\ApiPythonFacial`
+5. `nssm start ApiPythonFacial`
+
+### Opção 3: WinSW (Windows Service Wrapper)
+
+1. Baixe: https://github.com/winsw/winsw/releases  
+2. Renomeie o `.exe` para `ApiPythonFacial.exe` e crie `ApiPythonFacial.xml`:
+
+```xml
+<service>
+  <id>ApiPythonFacial</id>
+  <name>API de Verificação Facial</name>
+  <executable>C:\caminho\ApiPythonFacial\venv\Scripts\python.exe</executable>
+  <arguments>-m uvicorn main:app --host 0.0.0.0 --port 8000</arguments>
+  <workingdirectory>C:\caminho\ApiPythonFacial</workingdirectory>
+  <log mode="roll"></log>
+</service>
+```
+
+3. `.\ApiPythonFacial.exe install` e `.\ApiPythonFacial.exe start`
+
+### Usando IIS como reverse proxy (opcional)
+
+Se o IIS já estiver no servidor para HTTPS/domínio:
+
+1. Instale **URL Rewrite** e **ARR** no IIS
+2. Rode a API como serviço (qualquer opção acima) em uma porta (ex: 8000)
+3. Configure um site no IIS com proxy para `http://127.0.0.1:8000`
+
 ## Estrutura do Projeto
 
 ```
-facial2/
-├── main.py           # App FastAPI + rotas
-├── face_service.py   # InsightFace (detecção, embeddings, similaridade)
-├── schemas.py        # DTOs (Pydantic)
-└── requirements.txt
+ApiPythonFacial/
+├── main.py              # App FastAPI + rotas
+├── face_service.py      # InsightFace (detecção, embeddings, similaridade)
+├── schemas.py           # DTOs (Pydantic)
+├── service_windows.py   # Serviço Windows nativo (pywin32)
+├── requirements.txt
+└── requirements-windows.txt   # Inclui pywin32 para serviço Windows
 ```
 
 ## Uso

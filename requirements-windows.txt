@@ -1,0 +1,5 @@
+# Dependências base (instale requirements.txt primeiro)
+-r requirements.txt
+
+# Serviço Windows nativo (pywin32)
+pywin32>=306
